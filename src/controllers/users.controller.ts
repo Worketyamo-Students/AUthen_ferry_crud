@@ -1,3 +1,4 @@
+import bcrypt from 'bcrypt';
 import {
   Request,
   Response,
@@ -9,6 +10,7 @@ import { PrismaClient } from '@prisma/client';
 import { generateOtp } from '../core/config/generateOtp';
 import { encryptPassword } from '../core/config/passwordencrypt';
 import sendmail from '../core/config/sendMail';
+import mytokens from '../core/config/tokensJwt';
 import { HttpCode } from '../core/constants';
 
 const prisma = new PrismaClient();
@@ -82,9 +84,9 @@ const userController = {
                     }
                          
             })
-             user.password=""
              res.status(HttpCode.CREATED).json(user);
             await sendmail(user.name, user.email, Intotp)
+            
         } 
         catch (error) {
 
@@ -92,7 +94,42 @@ const userController = {
         }
     
     },
+/////////login de l'utilisateur 
+    UserLogin: async (req:Request, res:Response)=>{
 
+        try {
+            const {email, password} = req.body
+        const user = await prisma.users.findUnique({
+                where: {
+                    email ,
+                    password
+                }
+                })
+
+                console.log(user)
+        if(user){
+            const comparePass = await bcrypt.compare(password, user.password)// veryfication du mot de passe 
+            if(comparePass){
+                  // generation du token d'acces
+                  const accessToken = mytokens.generateAccessToken(user);
+                  const refreshToken = mytokens.generateRefreshToken(user);
+                 // création du refresh token
+                  res.cookie("90SYFE_CT", accessToken, { httpOnly: true, secure: true })
+                  res.cookie("90SYFE_RT", refreshToken, { httpOnly: true, secure: true })
+                  res.json({msg:"connection reussie"})
+            }
+            else{
+                res.status(HttpCode.UNAUTHORIZED).json({msg:"mot de passe incorrecte"})
+            }
+        }// else{ res.json({msg:"cet utilisateur n'existe pas"}).status(HttpCode.NOT_FOUND)}
+
+        } catch (error) {
+            console.error(error)
+        }
+        
+
+     },
+    
     deleteUsers: async (req: Request, res: Response) => {
         try{
                     await prisma.users.deleteMany({})
@@ -105,3 +142,4 @@ const userController = {
 }
 
 export default userController
+

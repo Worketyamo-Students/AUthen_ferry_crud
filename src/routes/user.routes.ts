@@ -10,7 +10,8 @@ routeUser.get('/user', userController.getUsers)
 routeUser.get('/user/:id', userController.getOneUser)
 routeUser.post('/user', userController.registerUser)
 routeUser.delete('/user', userController.deleteUsers)
-routeUser.post('/verify-otp', verifyOtp);
+routeUser.post('/verify', verifyOtp);
+routeUser.post('/userlogin/login', userController.UserLogin)
 
 
 
