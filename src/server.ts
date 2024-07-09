@@ -1,11 +1,16 @@
+import compression from 'compression';
 // src/server.ts
 // Configurations de Middlewares
 import express from 'express';
-import compression from 'compression';
 import rateLimit from 'express-rate-limit';
-import { setupSwagger } from './swagger';
 import morgan from 'morgan';
-import { ONE_HUNDRED, SIXTY } from './core/constants';
+
+import {
+  ONE_HUNDRED,
+  SIXTY,
+} from './core/constants';
+import routeUser from './routes/user.routes';
+import { setupSwagger } from './swagger';
 
 const app = express();
 app.use(express.json());
@@ -18,6 +23,7 @@ app.use(
 		message: 'Trop de Requete à partir de cette adresse IP '
 	})
 );
+app.use(routeUser)
 
 app.use(morgan('combined'));
 
