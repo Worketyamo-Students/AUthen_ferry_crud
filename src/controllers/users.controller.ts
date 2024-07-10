@@ -101,8 +101,7 @@ const userController = {
             const {email, password} = req.body
         const user = await prisma.users.findUnique({
                 where: {
-                    email ,
-                    password
+                    email
                 }
                 })
 
