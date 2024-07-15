@@ -1,4 +1,5 @@
 import compression from 'compression';
+import cookieParser from 'cookie-parser';
 // src/server.ts
 // Configurations de Middlewares
 import express from 'express';
@@ -23,8 +24,8 @@ app.use(
 		message: 'Trop de Requete à partir de cette adresse IP '
 	})
 );
-app.use(routeUser)
-
+app.use(cookieParser());
+app.use(routeUser);
 app.use(morgan('combined'));
 
 setupSwagger(app);

@@ -3,7 +3,6 @@ import {
   Request,
   Response,
 } from 'express';
-import validator from 'validator';
 
 import { PrismaClient } from '@prisma/client';
 
@@ -46,21 +45,6 @@ const userController = {
      
         try {
             const {name, email, password} = req.body
-            //utilisation de validator pour verifier si les champs email et mot de passe sont correcte
-
-            if(!validator.isEmail(email)) {
-                res.json({msg:"entrez un email valide "})
-            }
-            else{  
-                const exitEmail = await prisma.users.findUnique({ where: { email } });
-                if (exitEmail) {
-                    return res.status(HttpCode.NOT_FOUND).json({ msg:"Email déjà utilisé" });
-                }
-            }
-    
-            if(!validator.isStrongPassword(password)) {
-                res.json({msg:"entrez un password valide"})
-            }
                 // appel de la fonction encryptpassword  pour le cryptage du mot de passe 
 
             const encryptedPassword = await encryptPassword(password)
@@ -79,13 +63,17 @@ const userController = {
                     name,
                     email,
                     password:encryptedPassword,
-                    codeotp: Intotp, // OTP
-                    expired_at: new Date(Date.now() + 10 * 60 * 1000), // Expiration dans 10 minute           
+                    codeotp:{
+                        
+                        otp: Intotp, // OTP
+                        expired_at: new Date(Date.now() + 10 * 60 * 1000), // Expiration dans 10 minute  
+                        expired: false
+                    }          
                     }
                          
             })
              res.status(HttpCode.CREATED).json(user);
-            await sendmail(user.name, user.email, Intotp)
+            await sendmail(user.name, user.email, user.codeotp.otp)
             
         } 
         catch (error) {
@@ -113,8 +101,9 @@ const userController = {
                   const accessToken = mytokens.generateAccessToken(user);
                   const refreshToken = mytokens.generateRefreshToken(user);
                  // création du refresh token
-                  res.cookie("90SYFE_CT", accessToken, { httpOnly: true, secure: true })
-                  res.cookie("90SYFE_RT", refreshToken, { httpOnly: true, secure: true })
+              
+                  res.cookie("syfecca", refreshToken, { httpOnly: true, secure: true })
+                  res.header ( 'Authorization' , accessToken)
                   res.json({msg:"connection reussie"})
             }
             else{
@@ -127,6 +116,23 @@ const userController = {
         }
         
 
+     },
+     RefreshAtoken: async (req:Request, res:Response)=>{
+        const refreshToken = req.cookies.syfecca;
+  
+        if (!refreshToken) {
+          return res.status(HttpCode.UNAUTHORIZED).json({ msg: 'Aucun jeton d actualisation trouvé' });
+        }
+      
+        try { 
+          const decodedR = mytokens.verifyRefreshToken(refreshToken)
+          const newAccessToken = mytokens.generateAccessToken(decodedR)
+          res.header('Authorization', newAccessToken) 
+          res.send(decodedR); 
+        } catch (error) { 
+          console.error(error)
+          return res.status(HttpCode.UNAUTHORIZED).json({ msg: 'Jeton d actualisation non valide' });
+        } 
      },
     
     deleteUsers: async (req: Request, res: Response) => {

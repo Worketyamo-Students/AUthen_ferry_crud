@@ -43,12 +43,15 @@ model Users {
   role  Role @default(user)
   created_at  DateTime @default(now())
   updated_at  DateTime @default(now())
-  codeotp     Int?
-  expired_at  DateTime? @default(now())
-  expired   Boolean  @default(false)
+  codeotp     OTP?
   // relation one to one avec les student 
   // student  Students  @relation(fields: [Student_id], references: [student_id])
   // Student_id String @unique @db.ObjectId
+}
+type OTP {
+  otp     Int?
+  expired_at  DateTime? @default(now())
+  expired   Boolean  @default(false)
 }
 
 enum Role {
